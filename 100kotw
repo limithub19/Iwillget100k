@@ -48,35 +48,12 @@ local allPets = {
 	"Kitsune", "Raccoon", "Butterfly", "Disco Bee", "Corrupted Kitsune", "Dragonfly", "T-Rex"
 }
 
-local player = game.Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
 gui.Name = "LuluHubUI"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.Enabled = false
-gui.Parent = player:WaitForChild("PlayerGui")
-
--- Loading screen
-local loadingFrame = Instance.new("Frame", gui)
-loadingFrame.Size = UDim2.new(1, 0, 1, 0)
-loadingFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-loadingFrame.ZIndex = 10
-
-local message = Instance.new("TextLabel", loadingFrame)
-message.Size = UDim2.new(0.8, 0, 0.1, 0)
-message.Position = UDim2.new(0.1, 0, 0.45, 0)
-message.Text = "🌸 Lulu Hub is preparing... Please wait 20 seconds"
-message.TextColor3 = Color3.new(1, 1, 1)
-message.BackgroundTransparency = 1
-message.TextScaled = true
-message.Font = Enum.Font.GothamBold
-message.TextStrokeTransparency = 0.4
-message.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
-
-local glow = Instance.new("UIStroke", message)
-glow.Thickness = 2
-glow.Color = Color3.fromRGB(255, 255, 255)
-glow.Transparency = 0.5
+gui.Parent = playerGui
 
 -- Toggle Button
 local toggleBtn = Instance.new("TextButton", gui)
@@ -87,7 +64,7 @@ toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 toggleBtn.TextColor3 = Color3.new(1, 1, 1)
 toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.TextScaled = true
-toggleBtn.Visible = false
+toggleBtn.Visible = true
 toggleBtn.AutoButtonColor = true
 
 -- Main Frame
@@ -95,7 +72,7 @@ local mainFrame = Instance.new("Frame", gui)
 mainFrame.Size = UDim2.new(0.6, 0, 0.6, 0)
 mainFrame.Position = UDim2.new(0.2, 0, 0.2, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-mainFrame.Visible = false
+mainFrame.Visible = true
 mainFrame.Active = true
 mainFrame.Draggable = true
 mainFrame.BorderSizePixel = 0
@@ -250,13 +227,6 @@ toggleBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
-task.delay(20, function()
-	loadingFrame:Destroy()
-	mainFrame.Visible = true
-	toggleBtn.Visible = true
-	loadPlayers()
-end)
-
 -- Selector Logic
 openFreezeTradeBtn.MouseButton1Click:Connect(function()
 	freezeGui.Enabled = true
@@ -266,4 +236,6 @@ end)
 openLuluHubBtn.MouseButton1Click:Connect(function()
 	gui.Enabled = true
 	freezeGui.Enabled = false
+	perPlayerPets = {}
+	loadPlayers()
 end)
