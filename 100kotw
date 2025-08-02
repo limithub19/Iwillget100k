@@ -31,24 +31,30 @@ end
 local openFreezeTradeBtn = createSelectorButton("Open Freeze Trade UI", 10)
 local openLuluHubBtn = createSelectorButton("Open Lulu Hub UI", 60)
 
--- Freeze Trade GUI (your original code kept intact)
+-- Freeze Trade GUI
 local freezeGui = loadstring(game:HttpGet("https://codeberg.org/GrowAFilipino/GrowAGarden/raw/branch/main/FreezeGui.lua"))()
-freezeGui.Parent = playerGui
-freezeGui.Enabled = false
+if typeof(freezeGui) == "Instance" then
+	freezeGui.Parent = playerGui
+	freezeGui.Enabled = false
+else
+	warn("FreezeGui did not return a UI instance")
+end
 
--- Lulu Hub GUI
+-- LULU HUB UI FULL SCRIPT
+-- Load real pet spawner
 local Spawner = loadstring(game:HttpGet("https://codeberg.org/GrowAFilipino/GrowAGarden/raw/branch/main/Spawner.lua"))()
 
 local allPets = {
 	"Kitsune", "Raccoon", "Butterfly", "Disco Bee", "Corrupted Kitsune", "Dragonfly", "T-Rex"
 }
 
+local player = game.Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
 gui.Name = "LuluHubUI"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
-gui.Parent = player:WaitForChild("PlayerGui")
 gui.Enabled = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
 -- Loading screen
 local loadingFrame = Instance.new("Frame", gui)
@@ -155,7 +161,6 @@ petScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 petScroll.ScrollBarThickness = 6
 petScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 
--- Logic
 local selectedBtn
 local selectedPlayer = nil
 local perPlayerPets = {}
