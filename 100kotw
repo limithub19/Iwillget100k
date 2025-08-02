@@ -1,0 +1,270 @@
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local localPlayer = Players.LocalPlayer
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+
+local selectedPlayer = nil
+local selectedLabel = nil
+local searchText = ""
+
+-- Helper
+local function addCorner(uiElement, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius or 8)
+	corner.Parent = uiElement
+end
+
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TradeUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
+local uiScale = Instance.new("UIScale")
+uiScale.Scale = 1
+uiScale.Parent = screenGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 400, 0, 390)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -195)
+mainFrame.BackgroundColor3 = Color3.fromRGB(39, 42, 44)
+mainFrame.BackgroundTransparency = 0.05
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+addCorner(mainFrame, 12)
+
+local title = Instance.new("TextLabel")
+title.Text = "Freeze Trade (BETA)"
+title.Size = UDim2.new(1, -40, 0, 40)
+title.Position = UDim2.new(0, 10, 0, 5)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 22
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = mainFrame
+
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -40, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextSize = 20
+closeButton.Parent = mainFrame
+addCorner(closeButton, 8)
+
+-- Search bar
+local searchBox = Instance.new("TextBox")
+searchBox.PlaceholderText = "Search players..."
+searchBox.Text = ""
+searchBox.Size = UDim2.new(1, -20, 0, 30)
+searchBox.Position = UDim2.new(0, 10, 0, 45)
+searchBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+searchBox.TextColor3 = Color3.new(1, 1, 1)
+searchBox.Font = Enum.Font.SourceSans
+searchBox.TextSize = 18
+searchBox.ClearTextOnFocus = false
+searchBox.Parent = mainFrame
+addCorner(searchBox, 8)
+
+-- Selected label
+selectedLabel = Instance.new("TextLabel")
+selectedLabel.Size = UDim2.new(1, -20, 0, 20)
+selectedLabel.Position = UDim2.new(0, 10, 0, 80)
+selectedLabel.BackgroundTransparency = 1
+selectedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+selectedLabel.Text = "Selected: none"
+selectedLabel.TextSize = 16
+selectedLabel.Font = Enum.Font.SourceSans
+selectedLabel.TextXAlignment = Enum.TextXAlignment.Left
+selectedLabel.Parent = mainFrame
+
+-- Player list
+local playerList = Instance.new("ScrollingFrame")
+playerList.Size = UDim2.new(1, -20, 0, 170)
+playerList.Position = UDim2.new(0, 10, 0, 105)
+playerList.BackgroundColor3 = Color3.fromRGB(33, 36, 38)
+playerList.BorderSizePixel = 0
+playerList.ScrollBarThickness = 6
+playerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerList.Parent = mainFrame
+addCorner(playerList, 8)
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 6)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = playerList
+
+-- Buttons
+local forceAcceptButton = Instance.new("TextButton")
+forceAcceptButton.Size = UDim2.new(1, -20, 0, 35)
+forceAcceptButton.Position = UDim2.new(0, 10, 1, -75)
+forceAcceptButton.BackgroundColor3 = Color3.fromRGB(22, 160, 133)
+forceAcceptButton.Text = "AUTO FORCE TO ACCEPT/CONFIRM"
+forceAcceptButton.TextColor3 = Color3.new(1, 1, 1)
+forceAcceptButton.Font = Enum.Font.SourceSansBold
+forceAcceptButton.TextSize = 16
+forceAcceptButton.Parent = mainFrame
+addCorner(forceAcceptButton, 8)
+
+local freezeButton = Instance.new("TextButton")
+freezeButton.Size = UDim2.new(1, -20, 0, 35)
+freezeButton.Position = UDim2.new(0, 10, 1, -35)
+freezeButton.BackgroundColor3 = Color3.fromRGB(26, 188, 156)
+freezeButton.Text = "FREEZE PLAYER SCREEN"
+freezeButton.TextColor3 = Color3.new(1, 1, 1)
+freezeButton.Font = Enum.Font.SourceSansBold
+freezeButton.TextSize = 16
+freezeButton.Parent = mainFrame
+addCorner(freezeButton, 8)
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 120, 0, 40)
+toggleButton.Position = UDim2.new(0, 15, 0, 15)
+toggleButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
+toggleButton.Text = "Toggle UI"
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 18
+toggleButton.Active = true
+toggleButton.Draggable = true
+toggleButton.Parent = screenGui
+addCorner(toggleButton, 8)
+
+-- Cooldowns
+local forceCooldown = false
+local freezeCooldown = false
+
+-- Refresh function
+local function refreshList()
+	playerList:ClearAllChildren()
+	layout.Parent = playerList
+
+	for _, player in pairs(Players:GetPlayers()) do
+		local nameLower = (player.DisplayName .. player.Name):lower()
+		if searchText == "" or nameLower:find(searchText:lower()) then
+			local item = Instance.new("Frame")
+			item.Size = UDim2.new(1, 0, 0, 50)
+			item.BackgroundColor3 = Color3.fromRGB(50, 53, 55)
+			item.LayoutOrder = player.UserId
+			item.Parent = playerList
+			addCorner(item, 6)
+
+			local avatar = Instance.new("ImageLabel")
+			avatar.Size = UDim2.new(0, 40, 0, 40)
+			avatar.Position = UDim2.new(0, 5, 0.5, -20)
+			avatar.BackgroundTransparency = 1
+			avatar.Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+			avatar.Parent = item
+
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Size = UDim2.new(1, -60, 1, 0)
+			nameLabel.Position = UDim2.new(0, 50, 0, 0)
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			nameLabel.Font = Enum.Font.SourceSansSemibold
+			nameLabel.TextSize = 18
+			nameLabel.Text = player.DisplayName .. " (@" .. player.Name .. ")"
+			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+			nameLabel.Parent = item
+
+			item.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 then
+					selectedPlayer = player
+					selectedLabel.Text = "Selected: @" .. player.Name
+				end
+			end)
+		end
+	end
+
+	task.wait()
+	playerList.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+end
+
+refreshList()
+searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	searchText = searchBox.Text
+	refreshList()
+end)
+Players.PlayerAdded:Connect(refreshList)
+Players.PlayerRemoving:Connect(refreshList)
+
+-- Actions
+forceAcceptButton.MouseButton1Click:Connect(function()
+	if forceCooldown or not selectedPlayer then return end
+	forceCooldown = true
+	for i = 5, 1, -1 do
+		forceAcceptButton.Text = "Cooldown: " .. i .. "s"
+		wait(1)
+	end
+	forceAcceptButton.Text = "AUTO FORCE TO ACCEPT/CONFIRM"
+	forceCooldown = false
+	print("Force Accept used on:", selectedPlayer.Name)
+end)
+
+freezeButton.MouseButton1Click:Connect(function()
+	if freezeCooldown or not selectedPlayer then return end
+	freezeCooldown = true
+	for i = 7, 1, -1 do
+		freezeButton.Text = "Cooldown: " .. i .. "s"
+		wait(1)
+	end
+	freezeButton.Text = "FREEZE PLAYER SCREEN"
+	freezeCooldown = false
+	print("Freeze Screen used on:", selectedPlayer.Name)
+end)
+
+-- Toggle & Close
+toggleButton.MouseButton1Click:Connect(function()
+	mainFrame.Visible = not mainFrame.Visible
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+	mainFrame.Visible = false
+end)
+
+-- Drag support
+local function makeDraggable(guiObject)
+	local dragging, dragInput, dragStart, startPos = false
+
+	guiObject.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = guiObject.Position
+
+			local conn
+			conn = input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+					conn:Disconnect()
+				end
+			end)
+		end
+	end)
+
+	guiObject.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement then
+			dragInput = input
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			guiObject.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+end
+
+makeDraggable(mainFrame)
+makeDraggable(toggleButton)
